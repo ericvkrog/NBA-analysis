@@ -1,0 +1,17 @@
+# Python cache / compiled
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Generated outputs
+outputs/
+
+# macOS
+.DS_Store
+
+# IntelliJ / JetBrains
+.idea/
+*.iml
