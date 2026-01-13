@@ -1,10 +1,9 @@
-"""
-NBA team-season analysis (2000–2023).
+"""NBA team-season analysis (2000–2023).
 
 What this script does
-- Loads team-season stats, engineers efficiency features, and evaluates Ridge models.
+- Loads regular-season team stats, engineers efficiency features, and evaluates Ridge models.
 - Optionally merges playoffs (2000–2021) and payroll (1990–2023; matched 2000–2021).
-- Exports one enriched dataset for downstream viz (Tableau) and saves a summary figure.
+- Exports one enriched dataset for downstream visualization (Tableau) and saves a summary figure.
 
 Outputs
 - outputs/nba_team_seasons_enriched.csv
@@ -27,6 +26,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
+# ---- Configuration ----
 # Data file paths (expected in data/raw/ unless you change these)
 CSV_PATH = "data/raw/nba_team_stats_00_to_23.csv"  # Regular season team statistics
 PLAYOFFS_CSV_PATH = "data/raw/nba_team_stats_playoffs_00_to_21.csv"  # Playoff outcomes
@@ -47,7 +47,7 @@ SAVE_PLOTS = True         # Save plots to outputs/figures/
 SHOW_PLOTS = False        # Keep False for portfolio scripts; set True when exploring locally
 
 
-# HELPER FUNCTIONS
+# ---- Helpers ----
 
 
 def season_start_year(season_str: str) -> int:
@@ -55,7 +55,7 @@ def season_start_year(season_str: str) -> int:
     return int(str(season_str).split("-")[0])
 
 
-# DATA HYGIENE FUNCTION
+# ---- Data hygiene ----
 
 def validate_and_standardize(df: pd.DataFrame) -> pd.DataFrame:
     """Basic data hygiene: coerce numeric cols, check ranges, drop invalid rows."""
@@ -125,7 +125,7 @@ def validate_and_standardize(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# DATA MERGING FUNCTIONS
+# ---- Optional merges (payroll / playoffs) ----
 
 def attach_payroll(df: pd.DataFrame, payroll_path: str) -> pd.DataFrame:
     """Merge team payroll (by team-season) onto the main dataframe.
@@ -218,7 +218,7 @@ def attach_payroll(df: pd.DataFrame, payroll_path: str) -> pd.DataFrame:
 
 
 
-# FEATURE ENGINEERING
+# ---- Feature engineering ----
 
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -290,7 +290,7 @@ def attach_playoffs(df: pd.DataFrame, playoffs_path: str) -> pd.DataFrame:
 
 
 
-# MODELING FUNCTIONS
+# ---- Modeling ----
 
 
 def fit_model(X_train, y_train, X_test, y_test, feature_names):
@@ -313,15 +313,80 @@ def fit_model(X_train, y_train, X_test, y_test, feature_names):
     return mae, coefs
 
 
+# ---- Visualization ----
 
-# MAIN ANALYSIS
+def make_summary_figure(league: pd.DataFrame, corr: pd.Series, results: dict, fig_path: str,
+                        save_plots: bool = True, show_plots: bool = False):
+    """Create and optionally save/show a compact 2x2 summary figure.
+
+    - League trends (3PA rate, eFG%)
+    - Feature correlations with win%
+    - Model MAE comparison
+
+    Notes:
+      - Uses a safe Matplotlib style fallback to avoid version-specific style errors.
+    """
+    # Visualizations (kept lightweight; no custom styling beyond a safe default)
+    try:
+        plt.style.use("seaborn-v0_8-darkgrid")
+    except OSError:
+        plt.style.use("default")
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+    # 1) 3PA rate over time
+    axes[0, 0].plot(league["season_start"], league["threepa_rate_mean"], linewidth=2, marker="o", markersize=4)
+    axes[0, 0].set_title("League 3-Point Attempt Rate Over Time", fontsize=12, fontweight="bold")
+    axes[0, 0].set_xlabel("Season Start Year")
+    axes[0, 0].set_ylabel("3PA / FGA")
+    axes[0, 0].grid(True, alpha=0.3)
+
+    # 2) eFG% over time
+    axes[0, 1].plot(league["season_start"], league["efg_mean"], linewidth=2, marker="o", markersize=4)
+    axes[0, 1].set_title("League Effective Field Goal % Over Time", fontsize=12, fontweight="bold")
+    axes[0, 1].set_xlabel("Season Start Year")
+    axes[0, 1].set_ylabel("eFG%")
+    axes[0, 1].grid(True, alpha=0.3)
+
+    # 3) Feature correlations
+    corr_data = corr[corr.index != "win_percentage"].sort_values(ascending=True)
+    axes[1, 0].barh(corr_data.index, corr_data.values, alpha=0.7)
+    axes[1, 0].set_title("Feature Correlations with Win%", fontsize=12, fontweight="bold")
+    axes[1, 0].set_xlabel("Correlation Coefficient")
+    axes[1, 0].axvline(x=0, color="black", linestyle="--", linewidth=1)
+    axes[1, 0].grid(True, alpha=0.3, axis="x")
+
+    # 4) Model performance comparison (win% MAE in percentage points)
+    model_names = list(results.keys())
+    model_maes = [results[m] for m in model_names]
+    axes[1, 1].bar(model_names, model_maes, alpha=0.7)
+    axes[1, 1].set_title("Model Performance (Lower is Better)", fontsize=12, fontweight="bold")
+    axes[1, 1].set_ylabel("MAE (percentage points)")
+    axes[1, 1].set_ylim(0, max(model_maes) * 1.2)
+    for i, mae in enumerate(model_maes):
+        axes[1, 1].text(i, mae + max(model_maes) * 0.02, f"{mae:.2f}", ha="center", fontsize=9)
+    axes[1, 1].grid(True, alpha=0.3, axis="y")
+
+    plt.tight_layout()
+
+    if save_plots:
+        fig.savefig(fig_path, dpi=200, bbox_inches="tight")
+
+    if show_plots:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
+
+# ---- Main pipeline ----
 
 def main():
     # Data loading
     # Load main dataset (regular season team statistics)
     df = pd.read_csv(CSV_PATH)
 
-    # Output folder for tables/metrics (keeps results reproducible for the repo)
+    # Outputs are written to `outputs/` (typically gitignored) to keep runs reproducible.
     out_dir = "outputs"
     fig_dir = os.path.join(out_dir, "figures")
     os.makedirs(out_dir, exist_ok=True)
@@ -340,8 +405,9 @@ def main():
         pd.set_option("display.max_columns", None)
         pd.set_option("display.width", 120)
     log(f"\nDataset: {df.shape[0]} team-seasons, {df.shape[1]} columns", force=True)
+    log(f"Config: USE_PLAYOFFS={USE_PLAYOFFS}, USE_PAYROLL={USE_PAYROLL}, QUIET_MODE={QUIET_MODE}", force=True)
 
-    # Normalize percentage columns - some datasets use 0-100, others use 0-1
+    # Some sources store percentages as 0–100 while others use 0–1; normalize to 0–1.
     # If max value > 1.5, assume it's in 0-100 format and convert to 0-1
     pct_cols = ["field_goal_percentage", "three_point_percentage", "free_throw_percentage"]
     for col in pct_cols:
@@ -403,7 +469,7 @@ def main():
     log(f"eFG% range: {df['efg'].min():.1%} to {df['efg'].max():.1%}")
     log(f"Duplicate team-seasons: {df.duplicated(subset=['Team', 'season']).sum()}")
 
-    # Train/test split: time-based to mimic forecasting (no future seasons in training).
+    # Time-based split to avoid leakage: train on past seasons, test on future seasons.
     train = df[df["season_start"] <= 2017].copy()
     test = df[df["season_start"] >= 2018].copy()
     # Feature definition
@@ -696,53 +762,18 @@ def main():
         if feat != "win_percentage":
             log(f"  {feat:15s}: {val:6.3f}")
 
-    # Visualizations (kept lightweight; no custom styling beyond a safe default)
-    try:
-        plt.style.use("seaborn-v0_8-darkgrid")
-    except OSError:
-        plt.style.use("default")
-
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    # 1. 3PA Rate Over Time
-    axes[0, 0].plot(league["season_start"], league["threepa_rate_mean"], linewidth=2, marker='o', markersize=4)
-    axes[0, 0].set_title("League 3-Point Attempt Rate Over Time", fontsize=12, fontweight='bold')
-    axes[0, 0].set_xlabel("Season Start Year")
-    axes[0, 0].set_ylabel("3PA / FGA")
-    axes[0, 0].grid(True, alpha=0.3)
-    # 2. eFG% Over Time
-    axes[0, 1].plot(league["season_start"], league["efg_mean"], linewidth=2, marker='o', markersize=4)
-    axes[0, 1].set_title("League Effective Field Goal % Over Time", fontsize=12, fontweight='bold')
-    axes[0, 1].set_xlabel("Season Start Year")
-    axes[0, 1].set_ylabel("eFG%")
-    axes[0, 1].grid(True, alpha=0.3)
-    # 3. Feature Correlations
-    corr_data = corr[corr.index != "win_percentage"].sort_values(ascending=True)
-    axes[1, 0].barh(corr_data.index, corr_data.values, alpha=0.7)
-    axes[1, 0].set_title("Feature Correlations with Win%", fontsize=12, fontweight='bold')
-    axes[1, 0].set_xlabel("Correlation Coefficient")
-    axes[1, 0].axvline(x=0, color='black', linestyle='--', linewidth=1)
-    axes[1, 0].grid(True, alpha=0.3, axis='x')
-    # 4. Model Performance Comparison
-    model_names = list(results.keys())
-    model_maes = [results[m] for m in model_names]
-    axes[1, 1].bar(model_names, model_maes, alpha=0.7)
-    axes[1, 1].set_title("Model Performance (Lower is Better)", fontsize=12, fontweight='bold')
-    axes[1, 1].set_ylabel("Mean Absolute Error")
-    axes[1, 1].set_ylim(0, max(model_maes) * 1.2)
-    for i, (name, mae) in enumerate(zip(model_names, model_maes)):
-        axes[1, 1].text(i, mae + max(model_maes) * 0.02, f'{mae:.4f}', ha='center', fontsize=9)
-    axes[1, 1].grid(True, alpha=0.3, axis='y')
-    plt.tight_layout()
-
+    # Summary figure (saved to disk for the repo; optionally shown interactively)
+    fig_path = os.path.join(fig_dir, "league_trends_and_models.png")
+    make_summary_figure(
+        league=league,
+        corr=corr,
+        results=results,
+        fig_path=fig_path,
+        save_plots=SAVE_PLOTS,
+        show_plots=SHOW_PLOTS,
+    )
     if SAVE_PLOTS:
-        fig_path = os.path.join(fig_dir, "league_trends_and_models.png")
-        fig.savefig(fig_path, dpi=200, bbox_inches="tight")
         log(f"[OUTPUT] Saved figure: {fig_path}", force=True)
-
-    if SHOW_PLOTS and ((not QUIET_MODE) or VERBOSE):
-        plt.show()
-    else:
-        plt.close(fig)
 
     # Key findings summary
     log("\n--- Key findings ---")
