@@ -80,4 +80,4 @@ python nba_analysis.py
 
 ## AI use
 
-I used AI tools for code cleanup/formatting and for drafting README text. All analysis choices, feature engineering decisions, and final code were reviewed and tested by me.
+I used AI tools for code cleanup/formatting and for drafting README text. All analysis, engineering decisions, and final code were reviewed and tested by me.
