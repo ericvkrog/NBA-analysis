@@ -2,6 +2,10 @@
 
 This project analyzes NBA team-season performance using engineered efficiency features and simple predictive models.
 
+# Why I made this
+
+I built this project to improve and demonstrate core data science skills such as data cleaning/merging, feature engineering, and time-safe modeling using NBA team-season data. The output is a single Tableau-ready dataset and a small set of visuals, including a payroll “value” lens to show over/under-performers relative to spending.
+
 What this does:
 - Loads regular-season team stats (2000–2023) and builds efficiency features (eFG%, turnover rate, 3PA rate, FT rate, etc.).
 - Evaluates Ridge regression models with a time-based split (no training on future seasons).
