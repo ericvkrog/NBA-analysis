@@ -19,12 +19,14 @@ What this does:
 
 ```text
 .
-├── README.MD
+README.MD
 ├── nba_analysis.py
 ├── requirements.txt
 ├── .gitignore
 ├── tableau
-│   └── nba_dashboards.twbx
+│   ├── nba_dashboards.twbx
+│   ├── Modern_vs_past_nba.png
+│   └── NBA_Value.png
 ├── repo_assets
 │   └── league_trends_and_models.png
 ├── data
