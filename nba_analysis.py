@@ -458,11 +458,13 @@ def main():
             force=True,
         )
 
-    # Export one enriched dataset
-    if SAVE_ENRICHED_CSV:
-        enriched_path = os.path.join(out_dir, ENRICHED_CSV_NAME)
-        df.to_csv(enriched_path, index=False)
-        log(f"[OUTPUT] Wrote enriched dataset: {enriched_path} ({df.shape[0]} rows, {df.shape[1]} cols)", force=True)
+    # Convenience: win% in percentage points (0–100) for Tableau-friendly output
+    df["win_pct_pp"] = df["win_percentage"].astype(float) * 100.0
+
+    # These are populated when payroll is available (see payroll value analysis below).
+    # Keep as NA for rows/seasons without payroll coverage.
+    df["win_pct_expected"] = pd.NA
+    df["win_pct_residual"] = pd.NA
 
     # Data validation - quick sanity checks
     log(f"\nWin% range: {df['win_percentage'].min():.1%} to {df['win_percentage'].max():.1%}")
@@ -558,6 +560,17 @@ def main():
             value_pipe.fit(X, y)
             pay_df["win_pct_expected"] = value_pipe.predict(X)
             pay_df["win_pct_residual"] = pay_df["win_pct_pp"] - pay_df["win_pct_expected"]
+
+            # Write expected/residual values back to the main dataframe so they are included in the enriched export
+            key_cols = ["Team", "season_start"]
+            tmp = pay_df[key_cols + ["win_pct_expected", "win_pct_residual"]].copy()
+            tmp = tmp.dropna(subset=["win_pct_expected", "win_pct_residual"])  # safety
+
+            df_idx = df.set_index(key_cols)
+            tmp_idx = tmp.set_index(key_cols)
+            df_idx.loc[tmp_idx.index, "win_pct_expected"] = tmp_idx["win_pct_expected"]
+            df_idx.loc[tmp_idx.index, "win_pct_residual"] = tmp_idx["win_pct_residual"]
+            df = df_idx.reset_index()
 
             log("\n--- Payroll value (net of team stats) ---")
             log("Residual = actual win% (pp) − expected win% (pp) given payroll + efficiency stats")
@@ -774,6 +787,12 @@ def main():
     )
     if SAVE_PLOTS:
         log(f"[OUTPUT] Saved figure: {fig_path}", force=True)
+
+    # Export one enriched dataset (after all derived fields are computed)
+    if SAVE_ENRICHED_CSV:
+        enriched_path = os.path.join(out_dir, ENRICHED_CSV_NAME)
+        df.to_csv(enriched_path, index=False)
+        log(f"[OUTPUT] Wrote enriched dataset: {enriched_path} ({df.shape[0]} rows, {df.shape[1]} cols)", force=True)
 
     # Key findings summary
     log("\n--- Key findings ---")
