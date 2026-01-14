@@ -386,7 +386,7 @@ def main():
     # Load main dataset (regular season team statistics)
     df = pd.read_csv(CSV_PATH)
 
-    # Outputs are written to `outputs/` (typically gitignored) to keep runs reproducible.
+    # Outputs are written to `outputs/`
     out_dir = "outputs"
     fig_dir = os.path.join(out_dir, "figures")
     os.makedirs(out_dir, exist_ok=True)
