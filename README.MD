@@ -62,7 +62,15 @@ Running the script writes the following artifacts to `outputs/`:
 - `outputs/figures/league_trends_and_models.png` — summary figure saved to disk
 
 Note: payroll and playoff merges do not cover every season in the regular-season dataset. When results are described as “restricted,” they are computed only on the subset of seasons where payroll exists (no imputation of missing payroll years).
+## Decisions & rationale (design choices)
 
+- Used **team-season** data to maximize coverage (2000–2023) and enable consistent comparisons across eras.
+- Preferred **rate/efficiency features** to reduce pace-driven distortion vs raw totals.
+- Used a **time-based split** to avoid training on future seasons (prevents leakage).
+- Chose **Ridge regression** for stable coefficients under correlated predictors.
+- Standardized payroll within season (`payroll_z_by_season`) to compare spending **relative to league peers** across eras.
+- Estimated possessions (not included in the raw data) to support per-possession rates (see limitations).
+- Evaluated payroll models on the **restricted** subset where payroll exists (no imputation).
 ## Payroll value lens (how to interpret it)
 
 Residuals are computed from the payroll+stats value model:
@@ -112,9 +120,8 @@ This analysis is team-season level and uses public aggregates. Results should be
 - **Playoff context:** bracket path, health, and matchups strongly affect playoff wins.
 
 **Methodology / measurement constraints:**
-- **Estimated possessions (rate denominators):** possessions are not directly provided in the raw dataset, so they are estimated using a common approximation:
-  - `possessions = 0.96 * (FGA + TOV + 0.44 * FTA − OREB)`  
-    Because multiple engineered features use possessions as a denominator, approximation error can propagate into per-possession rates and affect coefficients and error metrics. The constants (0.96 and 0.44) are league-level heuristics and may not perfectly reflect team/era-specific differences.
+- Possessions were not included in the raw dataset, 
+so I estimated them using a standard approximation (`0.96 * (FGA + TOV + 0.44*FTA − OREB)`) to support per-possession rate features; this introduces minor measurement error in downstream rates.
 - **Aggregation effects:** season averages can hide variance (clutch performance, garbage time, matchup effects). Two teams with similar averages can have different win outcomes.
 
 **Data coverage constraints:**
