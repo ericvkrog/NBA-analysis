@@ -8,7 +8,7 @@ This project builds a Tableau-ready NBA team-season dataset and a set of interpr
 time-safe models to explain what drives winning and to benchmark team performance relative to payroll expectations 
 (a practical “value” lens for comparing front-office efficiency across seasons).
 
-## Executive summary
+## Executive summary 
 - **Coverage:** Regular season 2000–2023 (716 team-seasons); **playoffs 2000–2020 (626 team-seasons)**; **payroll 2000–2021 (656 team-seasons)**.
 - **Best single relationship with win%:** **eFG% (r = 0.442)**.
 - **Best win% model (stats-only):** **Defense feature set, MAE = 11.50 pp** (vs Offense 15.17 pp, Combined 13.37 pp).
