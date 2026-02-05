@@ -38,7 +38,7 @@ USE_PAYROLL = True
 
 # Output / logging behavior
 QUIET_MODE = True   # When True, only prints a small summary
-VERBOSE = False     # Extra diagnostics (overrides QUIET_MODE for debug prints)
+VERBOSE = True     # Extra diagnostics (overrides QUIET_MODE for debug prints)
 
 # Outputs
 SAVE_ENRICHED_CSV = True  # Writes one merged/enriched CSV to outputs/
