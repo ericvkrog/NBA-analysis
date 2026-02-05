@@ -1,15 +1,14 @@
-# NBA Team-Season Modeling (2000–2023)
+# NBA Team-Season Modeling (2000-2023)
 
 This project analyzes NBA team-season performance using engineered efficiency features and simple predictive models.
 
 # Why I made this
 
-This project builds a Tableau-ready NBA team-season dataset and a set of interpretable, 
-time-safe models to explain what drives winning and to benchmark team performance relative to payroll expectations 
-(a practical “value” lens for comparing front-office efficiency across seasons).
+I wanted a clean, Tableau-ready dataset and transparent models that explain what drives winning - and a way to evaluate team performance against payroll expectations as a practical front-office value lens across seasons.
+
 
 ## Executive summary 
-- **Coverage:** Regular season 2000–2023 (716 team-seasons); **playoffs 2000–2020 (626 team-seasons)**; **payroll 2000–2021 (656 team-seasons)**.
+- **Coverage:** Regular season 2000-2023 (716 team-seasons); **playoffs 2000-2020 (626 team-seasons)**; **payroll 2000-2021 (656 team-seasons)**.
 - **Best single relationship with win%:** **eFG% (r = 0.442)**.
 - **Best win% model (stats-only):** **Defense feature set, MAE = 11.50 pp** (vs Offense 15.17 pp, Combined 13.37 pp).
 - **Payroll adds signal (restricted seasons):** **Combined+Payroll MAE = 10.73 pp** (best with payroll).
@@ -20,7 +19,7 @@ time-safe models to explain what drives winning and to benchmark team performanc
 - Benchmark teams’ outcomes **relative to payroll expectations** (front office “value” lens).
 - Compare how the “winning formula” shifts across eras (strategy evolution).
 # What this does:
-- Loads regular-season team stats (2000–2023) and builds efficiency features (eFG%, turnover rate, 3PA rate, FT rate, etc.).
+- Loads regular-season team stats (2000-2023) and builds efficiency features (eFG%, turnover rate, 3PA rate, FT rate, etc.).
 - Evaluates Ridge regression models with a time-based split (no training on future seasons).
 - Merges payroll and playoff results when those source files cover the selected season range (coverage depends on the CSV sources).
 - Writes a single enriched team-season CSV (including engineered rates, playoffs, and payroll fields) for Tableau and downstream analysis.
@@ -64,7 +63,7 @@ Running the script writes the following artifacts to `outputs/`:
 Note: payroll and playoff merges do not cover every season in the regular-season dataset. When results are described as “restricted,” they are computed only on the subset of seasons where payroll exists (no imputation of missing payroll years).
 ## Decisions & rationale (design choices)
 
-- Used **team-season** data to maximize coverage (2000–2023) and enable consistent comparisons across eras.
+- Used **team-season** data to maximize coverage (2000-2023) and enable consistent comparisons across eras.
 - Preferred **rate/efficiency features** to reduce pace-driven distortion vs raw totals.
 - Used a **time-based split** to avoid training on future seasons (prevents leakage).
 - Chose **Ridge regression** for stable coefficients under correlated predictors.
@@ -125,13 +124,13 @@ so I estimated them using a standard approximation (`0.96 * (FGA + TOV + 0.44*FT
 - **Aggregation effects:** season averages can hide variance (clutch performance, garbage time, matchup effects). Two teams with similar averages can have different win outcomes.
 
 **Data coverage constraints:**
-- Payroll is available for **2000–2021**, and playoff outcomes for **2000–2020** in the merged dataset; analyses labeled **restricted** use only seasons with payroll present (no imputation).
+- Payroll is available for **2000-2021**, and playoff outcomes for **2000-2020** in the merged dataset; analyses labeled **restricted** use only seasons with payroll present (no imputation).
 - Short/lockout seasons exist (e.g., **2011, 2019**); rate metrics are more comparable than totals in those years.
 ## Modeling notes
 
 - Models use **Ridge regression (L2 regularization)** to keep coefficients stable when features are correlated.
 - Win% error is reported as **MAE in percentage points (pp)** (e.g., 8.5 pp = average absolute error of 8.5% in win rate).
-- In the enriched dataset, `win_percentage` is stored as a 0–1 fraction, while `win_pct_pp` is the same value expressed as 0–100 for visualization.
+- In the enriched dataset, `win_percentage` is stored as a 0-1 fraction, while `win_pct_pp` is the same value expressed as 0-100 for visualization.
 - Payroll models are evaluated on a **restricted** subset of seasons where payroll exists, so comparisons are apples-to-apples.
 - Payroll is standardized within each season as `payroll_z_by_season` (relative spending, comparable across eras).
 
@@ -162,7 +161,7 @@ The Tableau workbook is included in `tableau/nba_dashboards.twbx`. It contains t
 ## Enriched dataset columns (highlights)
 
 - `payroll_z_by_season`: payroll standardized within each season (z-score within season; makes spending comparable across eras).
-- `win_pct_pp`: win percentage expressed in percentage points (0–100) for visualization.
+- `win_pct_pp`: win percentage expressed in percentage points (0-100) for visualization.
 - `win_pct_expected`: expected win% (pp) from the payroll+stats value model (only populated where payroll is available; otherwise NA).
 - `win_pct_residual`: actual − expected win% (pp); positive = outperformed expectation (NA when expected is NA).
 - `plus_minus_per_game`: point differential per game (regular season).
