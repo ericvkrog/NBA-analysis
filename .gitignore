@@ -9,6 +9,9 @@ venv/
 # Generated outputs
 outputs/
 
+# Local scratch script
+alpha_comparison.py
+
 # macOS
 .DS_Store
 

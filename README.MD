@@ -1,24 +1,37 @@
 # NBA Team-Season Modeling (2000-2023)
 
+
 This project analyzes NBA team-season performance using engineered efficiency features and simple predictive models.
 
-# Why I made this
+## Links
+- **Tableau dashboard — Modern vs past NBA**: [View on Tableau Public](https://public.tableau.com/views/Dashboard1forNBA/Modernvspastnba)
+- **Tableau dashboard — NBA Value (Wins vs Payroll Residual)**: [View on Tableau Public](https://public.tableau.com/app/profile/eric.krog/viz/Dashboard1forNBA/NBAValueWinsvsPayrollwithResidual)
 
-I wanted a clean, Tableau-ready dataset and transparent models that explain what drives winning - and a way to evaluate team performance against payroll expectations as a practical front-office value lens across seasons.
+## Overview
+
+I wanted a clean, Tableau-ready dataset and transparent models that explain what drives winning-plus a practical front-office value lens that benchmarks team results against payroll expectations across seasons.
 
 
 ## Executive summary 
 - **Coverage:** Regular season 2000-2023 (716 team-seasons); **playoffs 2000-2020 (626 team-seasons)**; **payroll 2000-2021 (656 team-seasons)**.
+- **Restricted analyses:** Payroll/playoff results are computed only for seasons covered by the source CSVs (no imputation).
 - **Best single relationship with win%:** **eFG% (r = 0.442)**.
 - **Best win% model (stats-only):** **Defense feature set, MAE = 11.50 pp** (vs Offense 15.17 pp, Combined 13.37 pp).
 - **Payroll adds signal (restricted seasons):** **Combined+Payroll MAE = 10.73 pp** (best with payroll).
 - **Playoffs link:** **regular-season win% vs playoff wins r = 0.696**.
 
+## Key findings
+- **Shooting efficiency matters most:** eFG% is the strongest single correlate with win% (**r = 0.442**).
+- **Best stats-only model:** Defense feature set predicts win% with **MAE = 11.50 pp**.
+- **Payroll improves accuracy (restricted seasons):** Combined+Payroll reaches **MAE = 10.73 pp**.
+- **Value lens:** residuals (actual − expected win%) flag teams that over/underperform given payroll + efficiency.
+- **Deliverable:** one Tableau-ready enriched dataset plus dashboards for era trends and payroll-adjusted performance.
+
 ## Decision support (how this can be used)
 - Identify the efficiency levers most associated with winning (roster construction / player archetypes).
 - Benchmark teams’ outcomes **relative to payroll expectations** (front office “value” lens).
 - Compare how the “winning formula” shifts across eras (strategy evolution).
-# What this does:
+## What this does
 - Loads regular-season team stats (2000-2023) and builds efficiency features (eFG%, turnover rate, 3PA rate, FT rate, etc.).
 - Evaluates Ridge regression models with a time-based split (no training on future seasons).
 - Merges payroll and playoff results when those source files cover the selected season range (coverage depends on the CSV sources).
@@ -57,8 +70,8 @@ Raw CSVs are included in `data/raw/` (CC0 / Public Domain). Full citations and l
 ## Results
 
 Running the script writes the following artifacts to `outputs/`:
-- `outputs/nba_team_seasons_enriched.csv` — one merged/enriched dataset for Tableau and downstream analysis
-- `outputs/figures/league_trends_and_models.png` — summary figure saved to disk
+- `outputs/nba_team_seasons_enriched.csv` - one merged/enriched dataset for Tableau and downstream analysis
+- `outputs/figures/league_trends_and_models.png` - summary figure saved to disk
 
 Note: payroll and playoff merges do not cover every season in the regular-season dataset. When results are described as “restricted,” they are computed only on the subset of seasons where payroll exists (no imputation of missing payroll years).
 ## Decisions & rationale (design choices)
@@ -94,7 +107,7 @@ Residuals are computed from the payroll+stats value model:
 - Miami Heat (2007): **−23.7 pp**
 - Golden State Warriors (2009): **−23.5 pp**
 
-**Most recent payroll season (2021) value leaders:**
+**Latest payroll season in the merged dataset (2021) value leaders:**
 - Best: Miami Heat **(+14.6)**, Dallas Mavericks **(+13.6)**, Phoenix Suns **(+12.7)**
 - Worst: Indiana Pacers **(−22.2)**, Houston Rockets **(−18.6)**, Los Angeles Lakers **(−18.5)**
 
@@ -125,8 +138,13 @@ so I estimated them using a standard approximation (`0.96 * (FGA + TOV + 0.44*FT
 
 **Data coverage constraints:**
 - Payroll is available for **2000-2021**, and playoff outcomes for **2000-2020** in the merged dataset; analyses labeled **restricted** use only seasons with payroll present (no imputation).
-- Short/lockout seasons exist (e.g., **2011, 2019**); rate metrics are more comparable than totals in those years.
+- Shortened seasons affect comparability (e.g., **2011-12**, **2019-20**); rate metrics are more comparable than totals in those years.
 ## Modeling notes
+
+### Methods snapshot
+- **Split:** time-based train/test split to avoid training on future seasons.
+- **Preprocessing:** standardized features; Ridge regression (L2) to handle correlated predictors.
+- **Metric:** MAE reported in percentage points (pp) on win%.
 
 - Models use **Ridge regression (L2 regularization)** to keep coefficients stable when features are correlated.
 - Win% error is reported as **MAE in percentage points (pp)** (e.g., 8.5 pp = average absolute error of 8.5% in win rate).
@@ -149,8 +167,8 @@ The Tableau workbook is included in `tableau/nba_dashboards.twbx`. It contains t
 
 ### Interactive versions (Tableau Public)
 
-- **Modern vs past NBA**: https://public.tableau.com/views/Dashboard1forNBA/Modernvspastnba
-- **NBA Value (Wins vs Payroll with Residual)**: https://public.tableau.com/app/profile/eric.krog/viz/Dashboard1forNBA/NBAValueWinsvsPayrollwithResidual
+- **Modern vs past NBA**: [Tableau Public link](https://public.tableau.com/views/Dashboard1forNBA/Modernvspastnba)
+- **NBA Value (Wins vs Payroll with Residual)**: [Tableau Public link](https://public.tableau.com/app/profile/eric.krog/viz/Dashboard1forNBA/NBAValueWinsvsPayrollwithResidual)
 
 ### Dashboard previews
 

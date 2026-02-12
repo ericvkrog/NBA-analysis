@@ -1,8 +1,8 @@
-"""NBA team-season analysis (2000–2023).
+"""NBA team-season analysis (2000-2023).
 
 What this script does
 - Loads regular-season team stats, engineers efficiency features, and evaluates Ridge models.
-- Optionally merges playoffs (2000–2021) and payroll (1990–2023; matched 2000–2021).
+- Optionally merges playoffs (2000-2021) and payroll (1990-2023; matched 2000-2021).
 - Exports one enriched dataset for downstream visualization (Tableau) and saves a summary figure.
 
 Outputs
@@ -407,12 +407,12 @@ def main():
     log(f"\nDataset: {df.shape[0]} team-seasons, {df.shape[1]} columns", force=True)
     log(f"Config: USE_PLAYOFFS={USE_PLAYOFFS}, USE_PAYROLL={USE_PAYROLL}, QUIET_MODE={QUIET_MODE}", force=True)
 
-    # Some sources store percentages as 0–100 while others use 0–1; normalize to 0–1.
+    # Some sources store percentages as 0-100 while others use 0-1; normalize to 0-1.
     # If max value > 1.5, assume it's in 0-100 format and convert to 0-1
     pct_cols = ["field_goal_percentage", "three_point_percentage", "free_throw_percentage"]
     for col in pct_cols:
         if col in df.columns and df[col].notna().any():
-            # If max value > 1.5, assume it's in 0–100 format and convert to 0–1.
+            # If max value > 1.5, assume it's in 0-100 format and convert to 0-1.
             if df[col].max() > 1.5:
                 df[col] = df[col] / 100.0
 
@@ -432,7 +432,7 @@ def main():
             po_cov = df[df["po_data_available"]]
             if po_cov.shape[0] > 0:
                 log(
-                    f"[COVERAGE] Playoffs available: {po_cov['season_start'].min():.0f}–{po_cov['season_start'].max():.0f} "
+                    f"[COVERAGE] Playoffs available: {po_cov['season_start'].min():.0f}-{po_cov['season_start'].max():.0f} "
                     f"({po_cov.shape[0]} team-seasons).",
                     force=True,
                 )
@@ -453,12 +453,12 @@ def main():
     if USE_PAYROLL and "payroll_available" in df.columns and df["payroll_available"].any():
         pay_cov = df[df["payroll_available"]]
         log(
-            f"[COVERAGE] Payroll available: {pay_cov['season_start'].min():.0f}–{pay_cov['season_start'].max():.0f} "
+            f"[COVERAGE] Payroll available: {pay_cov['season_start'].min():.0f}-{pay_cov['season_start'].max():.0f} "
             f"({int(pay_cov.shape[0])} team-seasons).",
             force=True,
         )
 
-    # Convenience: win% in percentage points (0–100) for Tableau-friendly output
+    # Convenience: win% in percentage points (0-100) for Tableau-friendly output
     df["win_pct_pp"] = df["win_percentage"].astype(float) * 100.0
 
     # These are populated when payroll is available (see payroll value analysis below).
@@ -490,7 +490,7 @@ def main():
 
     # Modeling
     log("\n--- Win% prediction ---")
-    # Target variable: win percentage (0–100). Reporting MAE in percentage points.
+    # Target variable: win percentage (0-100). Reporting MAE in percentage points.
     y_train = (train["win_percentage"].astype(float) * 100.0)
     y_test = (test["win_percentage"].astype(float) * 100.0)
 
@@ -637,17 +637,17 @@ def main():
             log(f"    {k:12s} {v:+.3f}")
         return mae, coefs
 
-    # Pre-2015: train 2000–2010, test 2011–2014
+    # Pre-2015: train 2000-2010, test 2011-2014
     pre = df[df["season_start"] <= 2014].copy()
     pre_train = pre[pre["season_start"] <= 2010].copy()
     pre_test = pre[(pre["season_start"] >= 2011) & (pre["season_start"] <= 2014)].copy()
-    pre_mae, pre_coefs = _fit_and_report("Pre-2015 (2000–2014)", pre_train, pre_test, combined_cols)
+    pre_mae, pre_coefs = _fit_and_report("Pre-2015 (2000-2014)", pre_train, pre_test, combined_cols)
 
-    # Modern: train 2015–2019, test 2020–2023
+    # Modern: train 2015-2019, test 2020-2023
     modern = df[df["season_start"] >= 2015].copy()
     modern_train = modern[(modern["season_start"] >= 2015) & (modern["season_start"] <= 2019)].copy()
     modern_test = modern[(modern["season_start"] >= 2020) & (modern["season_start"] <= 2023)].copy()
-    modern_mae, modern_coefs = _fit_and_report("Modern (2015–2023)", modern_train, modern_test, combined_cols)
+    modern_mae, modern_coefs = _fit_and_report("Modern (2015-2023)", modern_train, modern_test, combined_cols)
 
     # Which features changed most across eras?
     if pre_coefs is not None and modern_coefs is not None:
