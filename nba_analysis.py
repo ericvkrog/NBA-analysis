@@ -176,10 +176,13 @@ def attach_playoffs(df, playoffs_path):
         po = po.rename(columns={"team": "Team"})
     
     po["season_start"] = po["season"].astype(str).apply(season_start_year)
+    po_seasons = set(po["season_start"].unique())
     po = po[["Team", "season_start", "games_played", "wins"]]
     po.columns = ["Team", "season_start", "po_games", "po_wins"]
 
     out = df.merge(po, on=["Team", "season_start"], how="left")
+    # flag seasons the playoff table actually covers, before we fill non-qualifiers with 0
+    out["po_data_available"] = out["season_start"].isin(po_seasons)
     out["po_games"] = out["po_games"].fillna(0)
     out["po_wins"] = out["po_wins"].fillna(0)
     out["made_playoffs"] = (out["po_games"] > 0).astype(int)
@@ -338,16 +341,22 @@ def main():
     y_train = (train["win_percentage"].astype(float) * 100.0)
     y_test = (test["win_percentage"].astype(float) * 100.0)
 
+    # baseline: predict the training-mean win% for everyone (the bar real models must clear)
+    win_baseline_mae = float((y_test - y_train.mean()).abs().mean())
+    log(f"Baseline MAE (predict mean win%): {win_baseline_mae:.2f} pp")
+
     # compare a few feature sets
     results = {}
     for name, cols in [("Offense", offense_cols), ("Defense", defense_cols), ("Combined", combined_cols)]:
         mae, coefs = fit_model(train[cols], y_train, test[cols], y_test, cols)
         results[name] = mae
-        log(f"{name:15s} -> MAE: {mae:.2f} percentage points")
+        lift = (win_baseline_mae - mae) / win_baseline_mae * 100.0
+        log(f"{name:15s} -> MAE: {mae:.2f} pp ({lift:+.1f}% vs baseline {win_baseline_mae:.2f})")
 
     log("\nModel comparison (lower MAE is better):")
     for name, mae in sorted(results.items(), key=lambda x: x[1]):
-        log(f"  {name:15s}: {mae:.2f} pp")
+        lift = (win_baseline_mae - mae) / win_baseline_mae * 100.0
+        log(f"  {name:15s}: {mae:.2f} pp ({lift:+.1f}% vs baseline)")
 
 
     payroll_results = {}
@@ -615,7 +624,11 @@ def main():
     log(f"1. Best predictor of win%: {best_feature} (r={best_corr:.3f})")
     best_model_name = min(results.items(), key=lambda x: x[1])[0]
     best_model_mae = min(results.values())
-    log(f"2. Best model for win%: {best_model_name} (MAE: {best_model_mae:.2f} pp)")
+    best_model_lift = (win_baseline_mae - best_model_mae) / win_baseline_mae * 100.0
+    log(
+        f"2. Best model for win%: {best_model_name} (MAE: {best_model_mae:.2f} pp, "
+        f"only {best_model_lift:+.1f}% vs predict-the-mean baseline {win_baseline_mae:.2f})"
+    )
 
     if payroll_results:
         best_payroll = min(payroll_results.items(), key=lambda x: x[1])

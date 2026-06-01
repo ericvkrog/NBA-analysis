@@ -1,6 +1,6 @@
-# NBA Team-Season Modeling (2000-2023)
+# NBA Team-Season Analysis (2000-2023)
 
-This is a small NBA data science project where I analyze team-season stats, build a few engineered features, and test simple regression models for win percentage.
+This is a small NBA data science project. I pulled about two decades of team-season stats and looked at a few things: how the league has changed (mostly the three-point boom), which teams win more or less than their payroll would suggest, and how well you can actually predict win% from basic box-score stats (short answer: not that well).
 
 ## Links
 - Tableau dashboard (Modern vs Past NBA): [View on Tableau Public](https://public.tableau.com/views/Dashboard1forNBA/Modernvspastnba)
@@ -8,20 +8,23 @@ This is a small NBA data science project where I analyze team-season stats, buil
 
 ## Project goal
 I wanted to answer a few straightforward questions:
+- How has the league changed over the last two decades?
 - Which team stats are most related to winning?
-- How well can we predict regular-season win% from team-level stats?
-- Does payroll add extra predictive signal?
 - Which teams overperform or underperform relative to payroll + stats?
+- How well can you actually predict win% from basic team stats?
 
 ## Quick results
 - Coverage:
   - Regular season: 2000-2023 (716 team-seasons)
   - Playoffs: 2000-2020 (626 team-seasons)
   - Payroll: 2000-2021 (656 team-seasons)
+- The league changed a lot: 3PA rate roughly doubled (0.170 to 0.395 of all shots) and eFG% went up across 2000-2023. This is the strongest pattern in the data.
+- Some teams consistently win more (or less) than their payroll and stats would predict. I dig into this in the "Payroll value lens" section below.
+- Regular-season win% lines up pretty well with playoff success (r = 0.696).
 - Best single correlation with win%: `efg` (r = 0.442)
-- Best stats-only win% model: Defense feature set, MAE = 11.50 percentage points
+- The win% models aren't great on held-out seasons. The best one (Defense features, MAE = 11.50 pp) only beats just guessing the average (11.92 pp) by about 3.5%, and the Offense and Combined sets actually do worse than guessing. So box-score rates on their own don't tell you much about future win%.
+  - One caveat: the "Defense is best" result comes from a single 2018+ test split, so I wouldn't lean on it. It doesn't match the plain correlations (where `efg` and `ast_rate` matter most), so I'd treat it as a hint, not a real finding.
 - With payroll (restricted seasons): Combined+Payroll MAE = 10.73 percentage points
-- Regular-season win% vs playoff wins: r = 0.696
 
 ## What the script does
 `nba_analysis.py`:
